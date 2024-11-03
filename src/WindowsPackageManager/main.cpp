@@ -17,6 +17,10 @@
 #include <winget/GroupPolicy.h>
 #include <ComClsids.h>
 
+#include <AppInstallerVersions.h>
+#include <string>
+#include <iostream>
+
 using namespace winrt::Microsoft::Management::Deployment;
 
 // CreatorMap for out-of-proc com registration and direct in-proc com class construction
@@ -37,6 +41,46 @@ extern "C"
 {
     int WINDOWS_PACKAGE_MANAGER_API_CALLING_CONVENTION WindowsPackageManagerCLIMain(int argc, wchar_t const** argv) try
     {
+        if (argc == 1) {
+            std::printf("enter versions\n");
+            std::vector<AppInstaller::Utility::Version> versions;
+            for (std::wstring line; std::getline(std::wcin, line);) {
+                if (line.length() == 0) {
+					break;
+				}
+                versions.push_back(AppInstaller::Utility::Version(AppInstaller::Utility::ConvertToUTF8(line)));
+            }
+            if (versions.size() == 1) {
+                auto version = versions[0];
+                auto parts = version.GetParts();
+                std::printf("Version parts:\n");
+                for (const auto& part : parts) {
+                    std::printf("int:   %lld\n", part.Integer);
+                    std::printf("other: %s\n", part.Other.c_str());
+				}
+                return 0;
+            }
+            if (versions.size() == 2) {
+                AppInstaller::Utility::Version v1 = versions[0];
+                AppInstaller::Utility::Version v2 = versions[1];
+                std::printf("Comparing versions:\n");
+                std::printf("v1 < v2: %s\n", v1 < v2 ? "true" : "false");
+                std::printf("v1 <= v2: %s\n", v1 <= v2 ? "true" : "false");
+                std::printf("v1 == v2: %s\n", v1 == v2 ? "true" : "false");
+                std::printf("v1 != v2: %s\n", v1 != v2 ? "true" : "false");
+                std::printf("v1 >= v2: %s\n", v1 >= v2 ? "true" : "false");
+                std::printf("v1 > v2: %s\n", v1 > v2 ? "true" : "false");
+                return 0;
+            }
+            std::sort(versions.begin(), versions.end());
+            std::printf("Sorted versions:\n");
+            for (const auto& version : versions) {
+				std::printf("%s\n", version.ToString().c_str());
+			}
+
+            return 0;
+        }
+
         ::Microsoft::WRL::Module<::Microsoft::WRL::ModuleType::InProc>::Create();
         return AppInstaller::CLI::CoreMain(argc, argv);
     }
